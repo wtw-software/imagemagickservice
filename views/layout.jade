@@ -1,0 +1,11 @@
+doctype html
+html
+  head
+    title= title
+    link(rel='stylesheet', href='/stylesheets/style.css')
+  body
+    block content
+
+form(action="/convert -resize 500x320", method="POST", enctype="multipart/form-data")
+  input(type="file" name="image")
+  input(type="submit")
