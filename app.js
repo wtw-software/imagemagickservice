@@ -11,7 +11,6 @@ var express       = require( 'express' ),
     formidable    = require( 'formidable' ),
     Jobqueue      = require( './lib/Jobqueue' ),
     ConvertJob    = require( './lib/ConvertJob' ),
-    once          = require( 'once' ),
     StreamBuffer  = require( './lib/StreamBuffer' )
 
 
