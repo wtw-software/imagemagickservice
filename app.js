@@ -10,7 +10,9 @@ var express       = require( 'express' ),
     path          = require( 'path' ),
     formidable    = require( 'formidable' ),
     Jobqueue      = require( './lib/Jobqueue' ),
-    ConvertJob    = require( './lib/ConvertJob' )
+    ConvertJob    = require( './lib/ConvertJob' ),
+    once          = require( 'once' ),
+    StreamBuffer  = require( './lib/StreamBuffer' )
 
 
 var app       = express(),
@@ -32,8 +34,6 @@ app.use( express.static(path.join(__dirname, 'public')) )
 if( 'development' == app.get('env') ) {
   app.use( express.errorHandler() )
 }
-
-app.get('/', routes.index);
 
 function interceptUploadStream( req, res, next ) {
   var form, uploadStream, convert
@@ -68,18 +68,30 @@ function parseTerminalParams( req, res, next ) {
   next()
 }
 
+app.get( '/', routes.index )
+
 app.post(/convert(.+)/, interceptUploadStream, parseTerminalParams, function( req, res ){
-  var uploadStream, terminalParams, convertjob
+  var uploadStream, terminalParams, convertjob, errorBuffer
 
   uploadStream = req.uploadStream
   terminalParams = req.terminalParams
 
   convertjob = new ConvertJob( uploadStream, terminalParams )
 
-  convertjob.on( 'started', function() {
+  convertjob.on('stdout', function( firstbuffer, stdout ) {
     res.set( 'Content-Type', 'image/jpg' )
-    convertjob.process.stdout
-      .pipe( res )
+    res.write( firstbuffer )
+    stdout.pipe( res )
+  })
+
+  convertjob.on('stderr', function( firstbuffer, stderr ) {
+    errorBuffer = new StreamBuffer( stderr )
+    errorBuffer.push( firstbuffer )
+    stderr.on('end', function() {
+      res.set( 'Content-Type', 'application/json' )
+      res.status( 500 )
+      res.send({ error: errorBuffer.toString() })
+    })
   })
 
   jobqueue.push( convertjob )
