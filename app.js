@@ -87,8 +87,8 @@ app.post(/convert(.+)/, interceptUploadStream, parseTerminalParams, function( re
     errorBuffer = new StreamBuffer( stderr )
     errorBuffer.push( firstbuffer )
     stderr.on('end', function() {
-      res.set( 'Content-Type', 'application/json' )
       res.status( 500 )
+      res.set( 'Content-Type', 'application/json' )
       res.send({ error: errorBuffer.toString() })
     })
   })
