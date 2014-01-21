@@ -5,7 +5,7 @@ var formidable = require( 'formidable' )
 
 
 module.exports = function ( options ) {
-  return function( req, res, next ){
+  return function( req, res, next ) {
     var form, timeout, uploadStream, convert
 
     form = new formidable.IncomingForm()
