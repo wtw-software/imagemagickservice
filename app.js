@@ -2,14 +2,13 @@
 /**
  * Module dependencies.
  */
-
 var express       = require( 'express' ),
-    routes        = require( './routes' ),
     http          = require( 'http' ),
     fs            = require( 'fs' ),
     path          = require( 'path' ),
     Jobqueue      = require( './lib/Jobqueue' ),
     LoadLimiter   = require( './lib/LoadLimiter' ),
+    client        = require( './routes/client' ),
     api           = require( './routes/api' )
 
 
@@ -24,8 +23,8 @@ module.exports = app
 /**
  * Singeltons
  */
-app.jobqueue    = new Jobqueue({ concurrency: 8 }),
-app.loadlimiter = new LoadLimiter({ maxConcurrentRequests: 20 })
+app.jobqueue    = new Jobqueue({ concurrency: 2 }),
+app.loadlimiter = new LoadLimiter({ maxConcurrentRequests: 100 })
 
 
 /**
@@ -57,11 +56,11 @@ var interceptUploadStream = require( './middleware/interceptUploadStream' ),
 /**
  * Routes
  */
-app.get( '/', routes.index )
+app.get( '/', client.index )
 
 app.all( '/api/*', app.loadlimiter.createMiddleware() )
 
-app.post( /\/api\/convert(.+)/, interceptUploadStream({ timeout: 5000 }), parseTerminalParams, api.convert )
+app.post( '/api/convert:terminalparams', interceptUploadStream({ timeout: 5000 }), parseTerminalParams, api.convert )
 
 
 
