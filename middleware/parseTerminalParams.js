@@ -1,8 +1,11 @@
 
 module.exports = function ( req, res, next ) {
   var terminalParams
+  
+  if( !req.query.terminalparams )
+    return next()
 
-  terminalParams = req.params.terminalparams
+  terminalParams = req.query.terminalparams
                       .trim()
                       .split( /\s+/ )
 

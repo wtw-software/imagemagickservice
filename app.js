@@ -26,7 +26,7 @@ module.exports = app
  * Singeltons
  */
 app.jobqueue    = new Jobqueue({ concurrency: 8 }),
-app.loadlimiter = new LoadLimiter({ maxConcurrentRequests: 999 })
+app.loadlimiter = new LoadLimiter({ maxConcurrentRequests: 300 })
 
 
 /**
@@ -51,14 +51,16 @@ temp.dir = path.join( __dirname, 'tmp' )
 temp.track()
 
 var graceFullServerExit = once(function( SIGNAL ) {
+  console.log('graceFullServerExit:', arguments)
   temp.cleanup()
   process.exit()
 })
 
-process
-  .on( 'exit',    graceFullServerExit )
-  .on( 'SIGINT',  graceFullServerExit )
-  .on( 'SIGTERM', graceFullServerExit )
+// process
+//   .on( 'error', console.log.bind(console) )
+//   .on( 'exit',    graceFullServerExit )
+//   .on( 'SIGINT',  graceFullServerExit )
+//   .on( 'SIGTERM', graceFullServerExit )
         
 
 
@@ -67,6 +69,7 @@ process
  */
 var interceptUploadStream = require( './middleware/interceptUploadStream' ),
     parseTerminalParams   = require( './middleware/parseTerminalParams' )
+    createConvertJob      = require( './middleware/createConvertJob' )
 
 
 /**
@@ -74,10 +77,14 @@ var interceptUploadStream = require( './middleware/interceptUploadStream' ),
  */
 app.get( '/', client.index )
 
-app.all( '/api/*', app.loadlimiter.createMiddleware() )
+/**
+ * Api
+ */
+app.post( '/api/convert*', app.loadlimiter.createMiddleware(), interceptUploadStream({ timeout: 5000 }) )
 
-app.post( '/api/convert*', interceptUploadStream({ timeout: 5000 }) )
-app.post( '/api/convert:terminalparams', parseTerminalParams, api.convert )
+app.post( '/api/convert', parseTerminalParams, createConvertJob, api.convert )
+
+app.post( '/api/convert/queue', parseTerminalParams, createConvertJob, api.queue )
 
 
 

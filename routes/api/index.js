@@ -1,18 +1,14 @@
 /**
  * Module dependencies.
  */
-var fs            = require( 'fs' ),
-    ConvertJob    = require( '../../lib/ConvertJob' ),
-    StreamBuffer  = require( '../../lib/StreamBuffer' )
+var StreamBuffer  = require( '../../lib/StreamBuffer' ),
+    http          = require( 'http' )
 
 
 module.exports.convert = function( req, res ) {
-  var filestream, params, convertjob, errorBuffer
-  
-  filestream = req.filestream
-  params = req.params
+  var convertjob, errorBuffer
 
-  convertjob = new ConvertJob( filestream, params )
+  convertjob = req.convertjob  
 
   convertjob.on( 'stdout', function( firstbuffer, stdout ) {
     res.set( 'Content-Type', 'image/jpg' )
@@ -33,6 +29,38 @@ module.exports.convert = function( req, res ) {
     res.set( 'Content-Type', 'application/json' )
     res.send( 500, { error: error })
   })
+}
 
-  app.jobqueue.push( convertjob )
+module.exports.queue = function( req, res ) {
+  var convertjob, callbackurl
+
+  convertjob = req.convertjob
+  callbackurl = req.query.callbackurl
+  console.log( callbackurl )
+  convertjob.on( 'stdout', function( firstbuffer, stdout ) {
+    var post
+
+    post = http.request( callbackurl )
+
+    post.write( firstbuffer )
+    stdout.pipe( post )
+
+    res.send( 200 )
+  })
+
+  convertjob.on( 'stderr', function( firstbuffer, stderr ) {
+    errorBuffer = new StreamBuffer( stderr )
+    errorBuffer.push( firstbuffer )
+    stderr.on('end', function() {
+      res.set( 'Content-Type', 'application/json' )
+      res.send( 400, { error: errorBuffer.toString() })
+    })
+  })
+
+  convertjob.on( 'processerror', function( error ) {
+    res.set( 'Content-Type', 'application/json' )
+    res.send( 500, { error: error })
+  })
+
+  //res.send(callbackurl)
 }

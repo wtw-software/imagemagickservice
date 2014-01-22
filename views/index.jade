@@ -2,7 +2,14 @@ extends layout
 
 block content
   
+  h1="post"  
   form(action="/api/convert -resize 100x100", method="POST", enctype="multipart/form-data" id="form")
+    input(type="text", name="params", id="params")
+    input(type="file" name="image")
+    input(type="submit")
+
+  h1="queue"
+  form(action="/api/convert/queue?callbackurl=http://127.0.0.1:3000/cb&terminalparams=-resize 100x100", method="POST", enctype="multipart/form-data" id="form")
     input(type="text", name="params", id="params")
     input(type="file" name="image")
     input(type="submit")
