@@ -6,6 +6,8 @@ var express       = require( 'express' ),
     http          = require( 'http' ),
     fs            = require( 'fs' ),
     path          = require( 'path' ),
+    temp          = require( 'temp' ),
+    once          = require( 'once' ),
     Jobqueue      = require( './lib/Jobqueue' ),
     LoadLimiter   = require( './lib/LoadLimiter' ),
     client        = require( './routes/client' ),
@@ -23,8 +25,8 @@ module.exports = app
 /**
  * Singeltons
  */
-app.jobqueue    = new Jobqueue({ concurrency: 2 }),
-app.loadlimiter = new LoadLimiter({ maxConcurrentRequests: 100 })
+app.jobqueue    = new Jobqueue({ concurrency: 8 }),
+app.loadlimiter = new LoadLimiter({ maxConcurrentRequests: 999 })
 
 
 /**
@@ -45,6 +47,20 @@ if( 'development' == app.get('env') ) {
   app.use( express.errorHandler() )
 }
 
+temp.dir = path.join( __dirname, 'tmp' )
+temp.track()
+
+var graceFullServerExit = once(function( SIGNAL ) {
+  temp.cleanup()
+  process.exit()
+})
+
+process
+  .on( 'exit',    graceFullServerExit )
+  .on( 'SIGINT',  graceFullServerExit )
+  .on( 'SIGTERM', graceFullServerExit )
+        
+
 
 /**
  * Middleware
@@ -60,7 +76,8 @@ app.get( '/', client.index )
 
 app.all( '/api/*', app.loadlimiter.createMiddleware() )
 
-app.post( '/api/convert:terminalparams', interceptUploadStream({ timeout: 5000 }), parseTerminalParams, api.convert )
+app.post( '/api/convert*', interceptUploadStream({ timeout: 5000 }) )
+app.post( '/api/convert:terminalparams', parseTerminalParams, api.convert )
 
 
 

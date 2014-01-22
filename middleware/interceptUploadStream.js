@@ -1,12 +1,13 @@
 /**
  * Module dependencies.
  */
-var formidable = require( 'formidable' )
+var formidable    = require( 'formidable' ),
+    PauseStream   = require( 'pause-stream' )
 
 
 module.exports = function ( options ) {
   return function( req, res, next ) {
-    var form, timeout, uploadStream, convert
+    var form, timeout, uploadStream, pauseStream, pausedStream
 
     form = new formidable.IncomingForm()
 
@@ -21,7 +22,12 @@ module.exports = function ( options ) {
         return form.handlePart( part )
 
       uploadStream = part
-      req.uploadStream = uploadStream
+      pauseStream = new PauseStream
+      pausedStream = pauseStream.pause()
+
+      req.filestream = pausedStream
+      
+      uploadStream.pipe( pausedStream )
 
       clearTimeout( timeout )
       next()

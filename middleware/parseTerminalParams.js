@@ -9,7 +9,7 @@ module.exports = function ( req, res, next ) {
   terminalParams.push( '-' )
   terminalParams.unshift( '-' )
 
-  req.terminalParams = terminalParams
+  req.params = terminalParams
   
   next()
 }

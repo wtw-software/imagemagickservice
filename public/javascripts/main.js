@@ -5,5 +5,5 @@ form = document.getElementById( "form" )
 paramsInput = document.getElementById( "params" )
 
 paramsInput.addEventListener( 'keyup', function() {
-  form.setAttribute( "action", "/convert " + paramsInput.value )
+  form.setAttribute( "action", "/api/convert " + paramsInput.value )
 }, false)
